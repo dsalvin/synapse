@@ -8,7 +8,8 @@ const DOT_RADIUS = 1;
 const BG_COLOR = '#f7f7f7';
 const DOT_COLOR = '#d1d1d1';
 
-export const Grid = ({ width, height }: { width: number; height: number; }) => {
+// ✅ FIX: Update the props to accept x and y
+export const Grid = ({ width, height, x, y }: { width: number; height: number; x: number; y: number; }) => {
   const patternCanvas = useMemo(() => {
     const canvas = document.createElement('canvas');
     canvas.width = GRID_SIZE;
@@ -29,14 +30,14 @@ export const Grid = ({ width, height }: { width: number; height: number; }) => {
 
   return (
     <Rect
-      x={0}
-      y={0}
+      // ✅ FIX: Apply the x and y props
+      x={x}
+      y={y}
       width={width}
       height={height}
-      // This is the corrected line
       fillPatternImage={patternCanvas as unknown as HTMLImageElement}
       fillPatternRepeat="repeat"
-      listening={false}
+      listening={false} // Make the grid non-interactive
     />
   );
 };
