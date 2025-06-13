@@ -1,6 +1,6 @@
 "use client";
 
-import { MousePointer2, Square, Circle, Type, Pencil } from 'lucide-react';
+import { MousePointer2, Square, Circle, Type, Pencil, Share2 } from 'lucide-react';
 import { useAppStore, Tool } from '@/lib/store';
 import { clsx } from 'clsx';
 
@@ -35,6 +35,7 @@ export function Toolbar() {
         <ToolButton tool="circle" icon={Circle} activeTool={activeTool} onClick={setActiveTool} />
         <ToolButton tool="note" icon={Type} activeTool={activeTool} onClick={setActiveTool} />
         <ToolButton tool="pen" icon={Pencil} activeTool={activeTool} onClick={setActiveTool} />
+        <ToolButton tool="connector" icon={Share2} activeTool={activeTool} onClick={setActiveTool} />
       </div>
 
       {/* --- NEW: Color Palette Section --- */}

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type Tool = 'select' | 'pen' | 'rectangle' | 'circle' | 'note';
+export type Tool = 'select' | 'pen' | 'rectangle' | 'circle' | 'note' | 'connector';
 
 // --- NEW: Add fillColor state ---
 type AppState = {
