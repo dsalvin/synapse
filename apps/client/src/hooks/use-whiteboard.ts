@@ -1,46 +1,87 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
+import { User } from 'next-auth';
 
-// --- UPDATED: Hook now accepts two callbacks ---
-export function useWhiteboard(boardId: string, onObjectsAdd: (obj: any[]) => void, onObjectUpdate: (obj: any) => void) {
+// Define a type for the presence payload
+type PresencePayload = {
+  users: { id: string; name: string; image: string; }[];
+};
+
+export function useWhiteboard(
+  boardId: string,
+  user: User | undefined,
+  onBoardLoad: (shapes: any[]) => void,
+  onObjectsAdd: (obj: any[]) => void,
+  onObjectUpdate: (obj: any) => void,
+  onPresenceUpdate: (payload: PresencePayload) => void
+) {
   const ws = useRef<WebSocket | null>(null);
   const [cursors, setCursors] = useState<Record<string, { x: number; y: number }>>({});
-  const [presence, setPresence] = useState({});
-
+  
   useEffect(() => {
-    const socket = new WebSocket(process.env.NEXT_PUBLIC_WEBSOCKET_URL!);
+    // --- START: DEBUGGING LOGIC ---
+    console.log("useWhiteboard hook triggered. Checking user object...");
+    console.log("User object received:", user);
+    
+    // This guard clause is the most likely point of failure.
+    if (!user || !user.id || !user.name || !user.image) {
+      console.error("❌ WebSocket connection aborted. User object is missing required properties.", {
+        hasUser: !!user,
+        hasId: !!user?.id,
+        hasName: !!user?.name,
+        hasImage: !!user?.image,
+      });
+      return; // Abort connection
+    }
+    console.log("✅ User object is valid. Proceeding to connect to WebSocket.");
+    // --- END: DEBUGGING LOGIC ---
+
+    const name = encodeURIComponent(user.name);
+    const image = encodeURIComponent(user.image);
+    
+    const socketUrl = `${process.env.NEXT_PUBLIC_WEBSOCKET_URL!}?boardId=${boardId}&userId=${user.id}&name=${name}&image=${image}`;
+    const socket = new WebSocket(socketUrl);
     ws.current = socket;
 
     socket.onopen = () => {
-      console.log('✅ WebSocket connected');
-      socket.send(JSON.stringify({ type: 'JOIN_BOARD', payload: { boardId } }));
+      console.log('✅ WebSocket connected successfully!');
     };
 
     socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
       switch (message.type) {
+        case 'LOAD_BOARD':
+          onBoardLoad(message.payload);
+          break;
+        case 'PRESENCE_UPDATE':
+          onPresenceUpdate(message.payload);
+          break;
         case 'CURSOR_MOVE':
           setCursors(prev => ({ ...prev, [message.payload.userId]: message.payload.pos }));
           break;
-        case 'USER_LEAVE':
-          setCursors(prev => {
-              const newCursors = { ...prev };
-              delete newCursors[message.payload.userId];
-              return newCursors;
-          });
-          break;
         case 'OBJECT_ADD':
-          onObjectsAdd(message.payload); // Expecting an array
+          onObjectsAdd(message.payload);
           break;
-        // --- NEW: Case for handling updates ---
         case 'OBJECT_UPDATE':
           onObjectUpdate(message.payload);
           break;
       }
     };
 
-    return () => socket.close(1000, "Component unmounting");
-  }, [boardId, onObjectsAdd, onObjectUpdate]);
+    socket.onclose = () => {
+        console.log('❌ WebSocket disconnected');
+    }
+
+    socket.onerror = (error) => {
+        console.error('WebSocket connection error:', error);
+    }
+
+    return () => {
+        if (socket.readyState === 1) {
+            socket.close(1000, "Component unmounting");
+        }
+    }
+  }, [boardId, user, onBoardLoad, onObjectsAdd, onObjectUpdate, onPresenceUpdate]);
 
   const sendCursorPosition = useDebouncedCallback((pos: {x: number, y: number}) => {
      if (pos && ws.current && ws.current.readyState === WebSocket.OPEN) {
@@ -54,5 +95,5 @@ export function useWhiteboard(boardId: string, onObjectsAdd: (obj: any[]) => voi
     }
   };
 
-  return { cursors, sendCursorPosition, sendObject, presence };
+  return { cursors, sendCursorPosition, sendObject };
 }
