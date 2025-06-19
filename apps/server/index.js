@@ -1,6 +1,6 @@
 const { WebSocketServer } = require('ws');
 const { URLSearchParams } = require('url');
-const { db } = require('./firebase');
+const { db } = require('@synapse/firebase-admin'); 
 
 const wss = new WebSocketServer({ port: 8080 });
 const boards = new Map();
