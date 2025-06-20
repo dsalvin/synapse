@@ -2,8 +2,8 @@
 
 import { Group, Rect, Text } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
+import type { NoteShape as NoteShapeType } from '@/types/board.d';
 
-// We move the helper function here as it's only used for the note
 const getContrastingTextColor = (hexColor: string) => {
     if (!hexColor) return '#111827';
     const r = parseInt(hexColor.slice(1, 3), 16);
@@ -13,18 +13,8 @@ const getContrastingTextColor = (hexColor: string) => {
     return luminance > 0.5 ? '#111827' : '#FFFFFF';
 };
 
-// Define the shape type again for props
-type Shape = {
-  id: string;
-  x?: number; y?: number;
-  width?: number; height?: number;
-  fill?: string;
-  text?: string;
-};
-
-// Define the props for our new component
 interface NoteShapeProps {
-    shape: Shape;
+    shape: NoteShapeType;
     isSelected: boolean;
     onDragEnd: (e: KonvaEventObject<DragEvent>) => void;
     onDblClick: (e: KonvaEventObject<MouseEvent>) => void;
@@ -33,27 +23,13 @@ interface NoteShapeProps {
 export const NoteShape = ({ shape, isSelected, onDragEnd, onDblClick }: NoteShapeProps) => {
     return (
         <Group
-            key={shape.id}
-            id={shape.id}
-            x={shape.x}
-            y={shape.y}
-            draggable={isSelected}
-            onDragEnd={onDragEnd}
-            onDblClick={onDblClick}
+            key={shape.id} id={shape.id} x={shape.x} y={shape.y}
+            draggable={isSelected} onDragEnd={onDragEnd} onDblClick={onDblClick}
         >
-            <Rect
-                width={shape.width}
-                height={shape.height}
-                fill={shape.fill}
-                cornerRadius={5}
-            />
+            <Rect width={shape.width} height={shape.height} fill={shape.fill} cornerRadius={5} />
             <Text
-                text={shape.text || ''}
-                width={shape.width}
-                padding={12}
-                fontSize={16}
-                listening={false} // The text itself should not be interactive
-                fill={getContrastingTextColor(shape.fill || '#ffef96')}
+                text={shape.text} width={shape.width} padding={12} fontSize={16}
+                listening={false} fill={getContrastingTextColor(shape.fill)}
             />
         </Group>
     );

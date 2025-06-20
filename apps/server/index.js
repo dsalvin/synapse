@@ -1,10 +1,10 @@
 const { WebSocketServer } = require('ws');
 const { URLSearchParams } = require('url');
-const { db } = require('@synapse/firebase-admin'); 
+const { db } = require('@synapse/firebase-admin');
 
 const wss = new WebSocketServer({ port: 8080 });
 const boards = new Map();
-const boardPresence = new Map(); // New: To track user details per board
+const boardPresence = new Map();
 
 console.log("WebSocket server started on port 8080");
 
@@ -17,7 +17,6 @@ wss.on('connection', async (ws, req) => {
         const image = params.get('image');
 
         if (!boardId || !userId || !name || !image) {
-            console.error('Connection rejected: Missing required user or board info');
             ws.terminate();
             return;
         }
@@ -25,7 +24,6 @@ wss.on('connection', async (ws, req) => {
         ws.userId = userId;
         ws.boardId = boardId;
 
-        // --- Presence Logic: Add user and broadcast update ---
         if (!boardPresence.has(boardId)) {
             boardPresence.set(boardId, new Map());
         }
@@ -38,10 +36,8 @@ wss.on('connection', async (ws, req) => {
         boards.get(boardId).add(ws);
         console.log(`Client ${userId} (${name}) joined board ${boardId}`);
 
-        // Broadcast the updated presence list to everyone on the board
         broadcastPresence(boardId);
         
-        // --- Firestore: Load existing shapes for the new user ---
         try {
             const shapesCollection = db.collection('boards').doc(boardId).collection('shapes');
             const snapshot = await shapesCollection.get();
@@ -58,6 +54,7 @@ wss.on('connection', async (ws, req) => {
                 const message = JSON.parse(rawMessage);
                 const { type, payload } = message;
                 
+                // --- THIS LINE IS THE FIX for real-time sync ---
                 broadcast(boardId, message, ws);
 
                 const shapesCollection = db.collection('boards').doc(boardId).collection('shapes');
@@ -78,6 +75,16 @@ wss.on('connection', async (ws, req) => {
                             await shapesCollection.doc(id).update(dataToUpdate);
                         }
                         break;
+                    case 'OBJECT_DELETE':
+                        if (Array.isArray(payload)) {
+                            const batch = db.batch();
+                            payload.forEach(shapeId => {
+                                const docRef = shapesCollection.doc(shapeId);
+                                batch.delete(docRef);
+                            });
+                            await batch.commit();
+                        }
+                        break;
                 }
             } catch (error) {
                 console.error('Failed to handle message or update Firestore:', error);
@@ -85,12 +92,10 @@ wss.on('connection', async (ws, req) => {
         });
 
         ws.on('close', () => {
-            // --- Presence Logic: Remove user and broadcast update ---
             if (boardPresence.has(boardId) && boardPresence.get(boardId).has(ws.userId)) {
                 boardPresence.get(boardId).delete(ws.userId);
                 broadcastPresence(boardId);
             }
-
             if (boards.has(boardId)) {
                 boards.get(boardId).delete(ws);
                 console.log(`Client ${ws.userId} disconnected from board ${boardId}.`);
@@ -107,7 +112,6 @@ function broadcast(boardId, message, senderWs) {
     if (!boardId || !boards.has(boardId)) return;
     const boardClients = boards.get(boardId);
     const messageString = JSON.stringify(message);
-
     boardClients.forEach((client) => {
         if (client.readyState === client.OPEN && client !== senderWs) {
             client.send(messageString);
@@ -115,17 +119,14 @@ function broadcast(boardId, message, senderWs) {
     });
 }
 
-// New function to broadcast presence updates to all clients on a board
 function broadcastPresence(boardId) {
     if (!boards.has(boardId) || !boardPresence.has(boardId)) return;
-
     const clients = boards.get(boardId);
     const users = Array.from(boardPresence.get(boardId).values());
     const presenceMessage = JSON.stringify({
         type: 'PRESENCE_UPDATE',
         payload: { users }
     });
-
     clients.forEach(client => {
         if (client.readyState === client.OPEN) {
             client.send(presenceMessage);
