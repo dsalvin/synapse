@@ -1,38 +1,15 @@
-"use client"; // This is the most important change.
+import { auth } from "@/auth";
+import { BoardLoader } from "@/components/board-loader";
+import { User } from "next-auth";
 
-import { useParams } from 'next/navigation';
-import dynamic from 'next/dynamic';
-
-// Dynamically import the Whiteboard component to ensure it only runs on the client
-const Whiteboard = dynamic(() => import('@/components/whiteboard'), {
-  ssr: false, // Disable server-side rendering for this component
-  loading: () => (
-    <div className="w-full h-screen flex items-center justify-center bg-gray-100">
-      <p className="text-2xl font-semibold text-gray-700">Loading Whiteboard...</p>
-    </div>
-  ),
-});
-
-export default function BoardPage() {
-  // `useParams` is the standard hook for accessing dynamic route
-  // parameters from a Client Component.
-  const params = useParams();
-
-  // The hook gives us the raw parameter, which could be a string or string[].
-  // We ensure it's a single string.
-  const boardId = Array.isArray(params.boardId) ? params.boardId[0] : params.boardId as string;
-
-  // Before the router is fully ready on the client, params might be empty.
-  // We render a loading state until we have the boardId.
-  if (!boardId) {
+export default async function BoardPage({ params }: { params: { boardId: string } }) {
+  const session = await auth();
+  if (!session?.user?.id) {
     return (
-      <div className="w-full h-screen flex items-center justify-center bg-gray-100">
-        <p className="text-2xl font-semibold text-gray-700">Loading...</p>
+      <div className="w-full h-screen flex items-center justify-center bg-gray-100 text-gray-700">
+        <p className="text-2xl font-semibold">Access Denied. Please sign in.</p>
       </div>
     );
   }
-
-  return (
-      <Whiteboard boardId={boardId} />
-  );
+  return <BoardLoader boardId={params.boardId} user={session.user as User & { id: string }} />;
 }

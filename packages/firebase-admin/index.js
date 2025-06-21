@@ -16,7 +16,6 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// CORRECTED FUNCTION
 async function getBoardsForUser(userId) {
     if (!userId) {
         return [];
@@ -24,12 +23,8 @@ async function getBoardsForUser(userId) {
 
     try {
         const boardsCollection = db.collection('boards');
-        
-        // This is the correct query that finds all boards where the user is a member
-        const querySnapshot = await boardsCollection
-            .where('members', 'array-contains', userId)
-            .orderBy('createdAt', 'desc')
-            .get();
+        const query = boardsCollection.where('memberIds', 'array-contains', userId).orderBy('createdAt', 'desc');
+        const querySnapshot = await query.get();
 
         if (querySnapshot.empty) {
             return [];
@@ -39,9 +34,10 @@ async function getBoardsForUser(userId) {
         return boards;
 
     } catch (error) {
+        // We keep this error log as it's useful for legitimate server issues
         console.error("Error fetching boards for user:", error);
         return [];
     }
 }
 
-module.exports = { db, getBoardsForUser }; // Export the correctly named function
+module.exports = { db, getBoardsForUser };

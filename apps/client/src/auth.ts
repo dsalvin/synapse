@@ -1,6 +1,8 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 import GitHub from "next-auth/providers/github"
+import { FirestoreAdapter } from "@auth/firebase-adapter" // CORRECTED NAME
+import { db } from "@synapse/firebase-admin"
  
 export const { 
   handlers: { GET, POST }, 
@@ -8,6 +10,8 @@ export const {
   signIn, 
   signOut 
 } = NextAuth({
+  // Use the FirestoreAdapter to connect NextAuth to your Firestore database
+  adapter: FirestoreAdapter(db), // CORRECTED NAME
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
@@ -19,26 +23,15 @@ export const {
     }),
   ],
   secret: process.env.AUTH_SECRET,
+  session: {
+    strategy: "jwt",
+  },
   callbacks: {
     session({ session, token }) {
-      // The `token.sub` is the user ID from the provider and is the most reliable source.
-      // We also ensure the name and image are passed to the session.
-      if (session.user) {
-        if (token.sub) {
-          session.user.id = token.sub;
-        }
-        if (token.name) {
-          session.user.name = token.name;
-        }
-        if (token.picture) {
-          session.user.image = token.picture;
-        }
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
       }
       return session;
     },
-    // The jwt callback is not strictly needed just for passing the ID,
-    // as NextAuth automatically populates `token.sub`, `name`, and `picture`.
-    // However, if you needed to add more custom data from your database,
-    // you would use the jwt callback to add it to the token first.
   },
 })
