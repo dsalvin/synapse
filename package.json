@@ -11,6 +11,7 @@
     "dev": "npm run dev --workspace=apps/client & npm run dev --workspace=apps/server"
   },
   "dependencies": {
-    "@auth/firebase-adapter": "^2.9.1"
+    "@auth/firebase-adapter": "^3.0.0",
+    "firebase-admin": "^12.1.0"
   }
 }

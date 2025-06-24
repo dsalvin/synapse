@@ -1,8 +1,5 @@
 {
-    "name": "@synapse/firebase-admin",
-    "version": "1.0.0",
-    "main": "index.js",
-    "dependencies": {
-      "firebase-admin": "^12.1.0"
-    }
-  }
+  "name": "@synapse/firebase-admin",
+  "version": "1.0.0",
+  "main": "index.js"
+}

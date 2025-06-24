@@ -15,7 +15,10 @@ wss.on('connection', async (ws, req) => {
         const userId = params.get('userId');
         const name = params.get('name');
         const image = params.get('image');
-        if (!boardId || !userId || !name || !image) { ws.terminate(); return; }
+
+        if (!boardId || !userId || !name || !image) {
+            ws.terminate(); return;
+        }
 
         ws.userId = userId;
         ws.boardId = boardId;
@@ -25,6 +28,7 @@ wss.on('connection', async (ws, req) => {
         if (!boards.has(boardId)) { boards.set(boardId, new Set()); }
         boards.get(boardId).add(ws);
         console.log(`Client ${userId} (${name}) joined board ${boardId}`);
+
         broadcastPresence(boardId);
         
         try {
@@ -39,8 +43,7 @@ wss.on('connection', async (ws, req) => {
             try {
                 const message = JSON.parse(rawMessage);
                 const { type, payload } = message;
-
-                // --- PERMISSION CHECK ---
+                
                 const modifyingActions = ['OBJECT_ADD', 'OBJECT_UPDATE', 'OBJECT_DELETE'];
                 if (modifyingActions.includes(type)) {
                     const boardDoc = await db.collection('boards').doc(ws.boardId).get();
@@ -48,7 +51,7 @@ wss.on('connection', async (ws, req) => {
                         const userRole = boardDoc.data()?.memberRoles?.[ws.userId];
                         if (userRole !== 'owner' && userRole !== 'editor') {
                             console.log(`PERMISSION DENIED: User ${ws.userId} (viewer) attempted action ${type}.`);
-                            return; // Stop processing the message
+                            return;
                         }
                     }
                 }

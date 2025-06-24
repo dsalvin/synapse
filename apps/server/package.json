@@ -1,17 +1,16 @@
 {
-    "name": "server",
-    "version": "1.0.0",
-    "main": "index.js",
-    "scripts": {
-      "start": "node index.js",
-      "dev": "nodemon index.js"
-    },
-    "dependencies": {
-      "firebase-admin": "^12.1.0",
-      "ws": "^8.17.0",
-      "uuid": "^9.0.1"
-    },
-    "devDependencies": {
-      "nodemon": "^3.1.2"
-    }
+  "name": "server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "@synapse/firebase-admin": "*",
+    "ws": "^8.17.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.2"
   }
+}
