@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { db } from '@synapse/firebase-admin';
+import { db } from '@/lib/firebase-admin';
 import { BoardRole } from '@/types/board.d';
 import * as admin from 'firebase-admin';
 

@@ -1,6 +1,7 @@
+require('dotenv').config({ path: '../client/.env.local' });
 const { WebSocketServer } = require('ws');
 const { URLSearchParams } = require('url');
-const { db } = require('@synapse/firebase-admin');
+const { db } = require('./firebase');
 
 const wss = new WebSocketServer({ port: 8080 });
 const boards = new Map();

@@ -2,7 +2,7 @@ import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 import GitHub from "next-auth/providers/github"
 import { FirestoreAdapter } from "@auth/firebase-adapter" // CORRECTED NAME
-import { db } from "@synapse/firebase-admin"
+import { db } from "@/lib/firebase-admin"
  
 export const { 
   handlers: { GET, POST }, 

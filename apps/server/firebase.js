@@ -1,22 +1,27 @@
 const admin = require('firebase-admin');
 
-// This will look for the serviceAccountKey.json file in the same directory.
-const serviceAccount = require('./serviceAccountKey.json');
+// This logic also now ONLY reads from the environment variable.
+// You will need to make this variable available to the server process.
+try {
+  // We check for the variable directly. If it's missing, we throw an error.
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable not found.');
+  }
 
-// Initialize the Firebase Admin SDK, but only if it hasn't been initialized already.
-if (!admin.apps.length) {
-  try {
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
+  if (!admin.apps.length) {
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });
-    console.log("✅ Firebase Admin SDK initialized successfully.");
-  } catch (error) {
-    console.error("❌ Error initializing Firebase Admin SDK:", error);
-    // Exit the process if Firebase fails to initialize, as it's a critical dependency.
-    process.exit(1); 
+    console.log("✅ WebSocket Server: Firebase Admin SDK initialized.");
   }
+} catch (error) {
+    if (error.code !== 'auth/credential-already-exists') {
+        console.error("❌ WebSocket Server: Error initializing Firebase Admin SDK:", error);
+        process.exit(1); 
+    }
 }
 
 const db = admin.firestore();
-
 module.exports = { db };
