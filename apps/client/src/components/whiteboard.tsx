@@ -17,40 +17,15 @@ import { User } from 'next-auth';
 import { findBestConnectionPoints } from '@/lib/geometry';
 import type { Board, Shape, PresenceUser, PenShape, RectShape, CircleShape, NoteShape as NoteShapeType, DiamondShape as DiamondShapeType, ConnectorShape } from '@/types/board.d';
 
-type TextEditState = { 
-  id: string; isEditing: boolean; text: string; x: number; y: number; fill: string; textColor?: string;
-};
-
-const ZoomControls = ({ scale, onZoomIn, onZoomOut }: { scale: number, onZoomIn: () => void, onZoomOut: () => void }) => {
-    return (
-        <div className="absolute bottom-4 right-4 bg-black rounded-lg shadow-md p-1 flex items-center gap-1 z-10">
-            <button onClick={onZoomOut} className="p-2 hover:bg-teal-100 rounded-md"><Minus size={16} /></button>
-            <span className="text-sm font-medium w-12 text-center">{Math.round(scale * 100)}%</span>
-            <button onClick={onZoomIn} className="p-2 hover:bg-teal-100 rounded-md"><Plus size={16} /></button>
-        </div>
-    );
-};
-
-const SmartArrow = ({ shape, allShapes }: { shape: Shape, allShapes: Shape[] }) => {
-    if (shape.type !== 'connector') return null;
-    const fromShape = allShapes.find(s => s.id === shape.from);
-    const toShape = allShapes.find(s => s.id === shape.to);
-    if (!fromShape || !toShape) return null;
-    const connection = findBestConnectionPoints(fromShape, toShape);
-    if (!connection) return null;
-    const points = [connection.start.x, connection.start.y, connection.end.x, connection.end.y];
-    return <Arrow points={points} stroke={shape.stroke} strokeWidth={3} pointerLength={10} pointerWidth={10} />;
-};
-
-const LiveCursor = ({ x, y, name }: { x: number; y: number; name: string }) => {
-    return <Text text={`\uD83D\uDC49 ${name}`} x={x + 10} y={y + 10} fill="blue" fontSize={16} />;
-};
+type TextEditState = { id: string; isEditing: boolean; text: string; x: number; y: number; fill: string; textColor?: string; };
+const ZoomControls = ({ scale, onZoomIn, onZoomOut }: { scale: number, onZoomIn: () => void, onZoomOut: () => void }) => ( <div className="absolute bottom-4 right-4 bg-black rounded-lg shadow-md p-1 flex items-center gap-1 z-10"> <button onClick={onZoomOut} className="p-2 hover:bg-teal-100 rounded-md"><Minus size={16} /></button> <span className="text-sm font-medium w-12 text-center">{Math.round(scale * 100)}%</span> <button onClick={onZoomIn} className="p-2 hover:bg-teal-100 rounded-md"><Plus size={16} /></button> </div> );
+const SmartArrow = ({ shape, allShapes }: { shape: Shape, allShapes: Shape[] }) => { if (shape.type !== 'connector') return null; const fromShape = allShapes.find(s => s.id === shape.from); const toShape = allShapes.find(s => s.id === shape.to); if (!fromShape || !toShape) return null; const connection = findBestConnectionPoints(fromShape, toShape); if (!connection) return null; const points = [connection.start.x, connection.start.y, connection.end.x, connection.end.y]; return <Arrow points={points} stroke={shape.stroke} strokeWidth={3} pointerLength={10} pointerWidth={10} />; };
+const LiveCursor = ({ x, y, name }: { x: number; y: number; name: string }) => ( <Text text={`\uD83D\uDC49 ${name}`} x={x + 10} y={y + 10} fill="blue" fontSize={16} /> );
 
 export const Whiteboard = ({ boardId, user }: { boardId: string, user: User & { id: string } }) => {
   const { history, historyIndex, setShapes, updateShapeInHistory, activeTool, setActiveTool } = useAppStore();
   const fillColor = useAppStore(state => state.fillColor);
   const shapes = history[historyIndex] || [];
-  
   const [board, setBoard] = useState<Board | null>(null);
   const [presentUsers, setPresentUsers] = useState<PresenceUser[]>([]);
   const [textEdit, setTextEdit] = useState<TextEditState>({ isEditing: false, id: '', text: '', x: 0, y: 0, fill: '#ffef96' });
@@ -66,25 +41,11 @@ export const Whiteboard = ({ boardId, user }: { boardId: string, user: User & { 
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
   const isPanning = useRef(false);
   const lastPointerPosition = useRef({ x: 0, y: 0 });
-  
   const userRole = board?.memberRoles[user.id];
   const isViewer = userRole === 'viewer';
 
-  const fetchBoardData = useCallback(async () => {
-    try {
-        const response = await fetch(`/api/boards/${boardId}`);
-        if (response.ok) {
-            const data = await response.json();
-            setBoard(data);
-            if (data.memberRoles[user.id] === 'viewer') { setActiveTool('select'); }
-        }
-    } catch (error) { console.error("Failed to fetch board details:", error); }
-  }, [boardId, user.id, setActiveTool]);
-
-  useEffect(() => {
-    fetchBoardData();
-  }, [fetchBoardData]);
-
+  const fetchBoardData = useCallback(async () => { try { const response = await fetch(`/api/boards/${boardId}`, { cache: 'no-store' }); if (response.ok) { const data = await response.json(); setBoard(data); if (data.memberRoles[user.id] === 'viewer') { setActiveTool('select'); } } } catch (error) { console.error("Failed to fetch board details:", error); } }, [boardId, user.id, setActiveTool]);
+  useEffect(() => { fetchBoardData(); const handleBoardUpdate = () => fetchBoardData(); window.addEventListener('boardUpdate', handleBoardUpdate); return () => { window.removeEventListener('boardUpdate', handleBoardUpdate); } }, [fetchBoardData]);
   const handleBoardLoad = useCallback((initialShapes: Shape[]) => { useAppStore.getState().setShapes(initialShapes, true); }, []);
   const handleAddShapes = useCallback((newShapes: Shape[]) => { const currentShapes = useAppStore.getState().history[useAppStore.getState().historyIndex] || []; const filteredNewShapes = newShapes.filter(newShape => !currentShapes.some(s => s.id === newShape.id)); if (filteredNewShapes.length > 0) { useAppStore.getState().setShapes([...currentShapes, ...filteredNewShapes]); } }, []);
   const handleUpdateShape = useCallback((updatedShape: Partial<Shape> & { id: string }) => { const currentShapes = useAppStore.getState().history[useAppStore.getState().historyIndex] || []; useAppStore.getState().setShapes( currentShapes.map(s => s.id === updatedShape.id ? { ...s, ...updatedShape } as Shape : s) ); }, []);
@@ -105,7 +66,13 @@ export const Whiteboard = ({ boardId, user }: { boardId: string, user: User & { 
     const didClickOnShape = e.target !== stage;
     const pos = getPointerPos();
     if (!pos) return;
-    if (activeTool === 'connector' && didClickOnShape) { isConnecting.current = true; connectorStartPoint.current = { fromId: e.target.id() }; setConnectorPreview({ x1: pos.x, y1: pos.y, x2: pos.x, y2: pos.y }); return; }
+
+    if (activeTool === 'connector' && didClickOnShape) {
+        isConnecting.current = true;
+        connectorStartPoint.current = { fromId: e.target.id() };
+        setConnectorPreview({ x1: pos.x, y1: pos.y, x2: pos.x, y2: pos.y });
+        return;
+    }
     if (activeTool === 'eraser' && didClickOnShape) { const idToDelete = e.target.id(); if (idToDelete) { handleDeleteShapes([idToDelete]); sendObject({ type: 'OBJECT_DELETE', payload: [idToDelete] }); } return; }
     if (activeTool === 'select') { if (!didClickOnShape && stage) { isPanning.current = true; lastPointerPosition.current = stage.getPointerPosition()!; } return; }
     if (didClickOnShape) return;
@@ -204,8 +171,12 @@ export const Whiteboard = ({ boardId, user }: { boardId: string, user: User & { 
           <div className="pointer-events-auto">
             <ShareButton board={board} onBoardUpdate={fetchBoardData} />
           </div>
-          <div className="pointer-events-auto"> <Toolbar isViewer={isViewer} /> </div>
-          <div className="pointer-events-auto"> <PresenceAvatars users={presentUsers} /> </div>
+          <div className="pointer-events-auto">
+            <Toolbar isViewer={isViewer} />
+          </div>
+          <div className="pointer-events-auto">
+            <PresenceAvatars users={presentUsers} />
+          </div>
       </div>
       <ZoomControls scale={stageScale} onZoomIn={() => zoomStage('in')} onZoomOut={() => zoomStage('out')} />
       {textEdit.isEditing && ( <textarea ref={textAreaRef} value={textEdit.text} onChange={(e) => setTextEdit(prev => ({ ...prev, text: e.target.value }))} onBlur={handleTextEditEnd} style={{ position: 'absolute', top: `${textEdit.y}px`, left: `${textEdit.x}px`, width: `${150 * stageScale}px`, height: `${150 * stageScale}px`, fontSize: `${16 * stageScale}px`, border: '1px solid #3b82f6', padding: `${12 * stageScale}px`, margin: '0', background: textEdit.fill, color: textEdit.textColor, fontFamily: 'sans-serif', resize: 'none', zIndex: 30, lineHeight: '1.5' }} /> )}

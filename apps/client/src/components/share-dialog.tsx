@@ -9,7 +9,7 @@ interface ShareDialogProps {
     board: Board;
     isOpen: boolean;
     onClose: () => void;
-    onBoardUpdate: () => void; // Callback to tell the parent to refetch data
+    onBoardUpdate: () => void;
 }
 
 type Member = Partial<PresenceUser> & { role: BoardRole; id: string; };
@@ -21,7 +21,7 @@ export const ShareDialog = ({ board, isOpen, onClose, onBoardUpdate }: ShareDial
     const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null);
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteStatus, setInviteStatus] = useState('');
-    
+
     const isOwner = board.ownerId === session?.user?.id;
 
     useEffect(() => {

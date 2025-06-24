@@ -15,7 +15,6 @@ type AppState = {
   undo: () => void;
   redo: () => void;
 };
-
 export const useAppStore = create<AppState>((set, get) => ({
   activeTool: 'select',
   setActiveTool: (tool) => set({ activeTool: tool }),

@@ -1,5 +1,4 @@
 "use client";
-
 import { MousePointer2, Square, Circle, Diamond, Type, Pencil, Share2, Undo2, Redo2, Eraser } from 'lucide-react';
 import { useAppStore, Tool } from '@/lib/store';
 import { clsx } from 'clsx';
@@ -9,12 +8,10 @@ const ActionButton = ({ title, icon: Icon, onClick, disabled = false }: { title:
 const COLORS = ['#333333', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'];
 
 interface ToolbarProps { isViewer: boolean; }
-
 export function Toolbar({ isViewer }: ToolbarProps) {
   const { activeTool, setActiveTool, fillColor, setFillColor, undo, redo, history, historyIndex } = useAppStore();
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
-
   return (
     <div className="bg-white rounded-lg shadow-md p-1 flex items-center gap-2">
       <div className="flex items-center gap-1 border-r pr-2 mr-2">
