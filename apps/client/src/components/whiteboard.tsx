@@ -22,7 +22,7 @@ const ZoomControls = ({ scale, onZoomIn, onZoomOut }: { scale: number, onZoomIn:
 const SmartArrow = ({ shape, allShapes }: { shape: Shape, allShapes: Shape[] }) => { if (shape.type !== 'connector') return null; const fromShape = allShapes.find(s => s.id === shape.from); const toShape = allShapes.find(s => s.id === shape.to); if (!fromShape || !toShape) return null; const connection = findBestConnectionPoints(fromShape, toShape); if (!connection) return null; const points = [connection.start.x, connection.start.y, connection.end.x, connection.end.y]; return <Arrow points={points} stroke={shape.stroke} strokeWidth={3} pointerLength={10} pointerWidth={10} />; };
 const LiveCursor = ({ x, y, name }: { x: number; y: number; name: string }) => ( <Text text={`\uD83D\uDC49 ${name}`} x={x + 10} y={y + 10} fill="blue" fontSize={16} /> );
 
-export const Whiteboard = ({ boardId, user }: { boardId: string, user: User & { id: string } }) => {
+const Whiteboard = ({ boardId, user }: { boardId: string, user: User & { id: string } }) => {
   const { history, historyIndex, setShapes, updateShapeInHistory, activeTool, setActiveTool } = useAppStore();
   const fillColor = useAppStore(state => state.fillColor);
   const shapes = history[historyIndex] || [];
@@ -200,3 +200,5 @@ export const Whiteboard = ({ boardId, user }: { boardId: string, user: User & { 
     </div>
   );
 };
+
+export default Whiteboard;

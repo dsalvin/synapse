@@ -3,8 +3,8 @@
 import dynamic from 'next/dynamic';
 import { SessionProvider } from 'next-auth/react';
 import { Loader } from 'lucide-react';
+import { User } from 'next-auth';
 
-// Dynamically import the Whiteboard component with SSR turned off
 const Whiteboard = dynamic(() => import('@/components/whiteboard'), {
   ssr: false,
   loading: () => (
@@ -15,12 +15,16 @@ const Whiteboard = dynamic(() => import('@/components/whiteboard'), {
   ),
 });
 
-// This component provides the session context required by our hooks
-// and then renders the whiteboard.
-export default function Board({ boardId }: { boardId: string }) {
+export default function Board({ 
+  boardId, 
+  user 
+}: { 
+  boardId: string;
+  user: User & { id: string };
+}) {
   return (
     <SessionProvider>
-      <Whiteboard boardId={boardId} />
+      <Whiteboard boardId={boardId} user={user} />
     </SessionProvider>
   );
 }
